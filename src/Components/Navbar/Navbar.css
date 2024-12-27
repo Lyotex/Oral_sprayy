@@ -37,7 +37,7 @@
     width: 80%;
     height: 3px;
     border-radius: 10px;
-    background: red;
+    background: rgb(0, 174, 255);
 }
 .nav-login-cart {
      display: flex;
@@ -69,6 +69,6 @@
     margin-left: -55px;
     border-radius: 11px;
     font-size: 14px;
-    background: red;
+    background: rgb(0, 174, 255);
     color: white;
 }

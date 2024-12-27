@@ -28,6 +28,9 @@ return  <Item key={i} id= {item.id} name={item.name} image={item.image} new_pric
           }
         })}
       </div>
+      <div className="shopcategory-loadmore">
+        Explore More
+      </div>
     </div>
   )
 }
