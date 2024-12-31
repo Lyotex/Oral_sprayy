@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Product</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+        }
+        form {
+            width: 300px;
+            margin: 0 auto;
+        }
+        input[type="text"], input[type="number"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            text-align: center;
+            margin-top: 20px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Upload Product</h2>
+    
+    <form id="uploadForm" enctype="multipart/form-data">
+        <label for="name">Product Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="description">Product Description:</label>
+        <input type="text" id="description" name="description" required>
+
+        <label for="price">Price:</label>
+        <input type="number" id="price" name="price" required>
+
+        <label for="product">Product Image:</label>
+        <input type="file" id="product" name="product" accept="image/*" required>
+
+        <button type="submit">Upload Product</button>
+    </form>
+
+    <div class="message" id="message"></div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent form from submitting normally
+
+            const formData = new FormData();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('price', document.getElementById('price').value);
+            formData.append('product', document.getElementById('product').files[0]);
+
+            try {
+                const response = await fetch('http://localhost:4000/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success === 1) {
+                    document.getElementById('message').textContent = 'Product uploaded successfully!';
+                    document.getElementById('message').style.color = 'green';
+                } else {
+                    document.getElementById('message').textContent = 'Error uploading product!';
+                    document.getElementById('message').style.color = 'red';
+                }
+            } catch (error) {
+                document.getElementById('message').textContent = 'Network error. Please try again.';
+                document.getElementById('message').style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>
+
+const port = 4000;
+const express = require("express");
+const app = express();
+const mongoose = require("mongoose");
+const multer = require("multer");
+const path = require("path");
+const cors = require("cors");
+
+// Middleware
+app.use(express.json());
+app.use(cors());
+
+// Database connection with MongoDB
+mongoose
+  .connect("mongodb+srv://sky:Root@cluster0.db6vb.mongodb.net/e-commerce")
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((err) => {
+    console.error("Error connecting to MongoDB:", err);
+  });
+
+// API root endpoint
+app.get("/", (req, res) => {
+  res.send("Express App is Running");
+});
+// Define a Product schema
+const productSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    price: { type: Number, required: true },
+    imageBase64: { type: String, required: true }, // Store image in Base64 format
+  });
+  
+  // Create a Product model
+  const Product = mongoose.model("Product", productSchema);
+
+// Image storage engine configuration
+const storage = multer.diskStorage({
+  destination: "./upload/images",
+  filename: (req, file, cb) => {
+    return cb(null, `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+// Static folder for serving images
+app.use("/images", express.static("upload/images"));
+
+// Upload endpoint
+app.post("/upload", async (req, res) => {
+    try {
+        const { name, description, price, imageBase64 } = req.body;
+
+        // Decode Base64 string and save the image
+        const buffer = Buffer.from(imageBase64, "base64");
+        const imagePath = `./upload/images/${Date.now()}_product.png`;
+
+        require("fs").writeFileSync(imagePath, buffer);
+
+        // Create a new product object
+        const newProduct = new Product({
+            name,
+            description,
+            price,
+            imageBase64, // Store the Base64 string in the database
+        });
+
+        // Save the product to MongoDB
+        const savedProduct = await newProduct.save();
+
+        res.json({
+            success: 1,
+            message: "Product uploaded and stored successfully!",
+            product: savedProduct,
+        });
+    } catch (error) {
+        console.error("Error uploading product:", error);
+        res.status(500).json({ success: 0, message: "Error uploading product" });
+    }
+});
+
+
+  
+
+// Start the server
+app.listen(port, (error) => {
+  if (!error) {
+    console.log(`Server Running on Port ${port}`);
+  } else {
+    console.error("Error:", error);
+  }
+});
+
+
+//schema for creating Products
+const Product =mongoose.model("Server Running on Port",{
+    id:{
+        type:Number,
+        required: true,
+        },
+        name:{
+            type:String,
+            required:true,
+        },
+        
+            image:{
+                type:String,
+                required:true,
+            },
+            category:{
+                type:String,
+                required:true,
+            },
+            new_price:{
+                type:Number,
+                required:Number,
+            },
+            old_price:{
+                type:Number,
+                required:Number,
+            },
+            date:{
+                type:Date,
+                default:Date.now,
+            },
+            available:{
+                type:Boolean,
+                default:true,
+            },
+        }
+)
+app.post('/addproduct',async(req,res)=>{
+    const product = new Product({
+        id:req.body.id,
+        name:req.body.name,
+        image:req.body.image,
+        category:req.body.category,
+        new_price:req.body.new_price,
+        old_price:req.body.old_price,
+    });
+    console.log(product);
+    await product.save();
+    console.log("Saved");
+    res.json({
+        sucess:true,
+        name:true,
+        name:req.body.name,
+    })
+    
+    
+})
